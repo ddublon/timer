@@ -1,10 +1,19 @@
 import "./style.css";
 import { lightningChart, AxisScrollStrategies } from "@arction/lcjs";
 
-let sliderValueGlobal = 5;
-const buffer = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let isPlaying = false;
+let playInterval;
+
+let sliderValueGlobal = 1;
+
+const response = await fetch("/message.json");
+const message = await response.json();
+console.log(message);
+
+const buffer = message[0].samples;
 const slider = document.getElementById("slider");
 const sliderValueDisplay = document.getElementById("sliderValue");
+sliderValueDisplay.textContent = sliderValueGlobal;
 
 const CONFIG = {
   timeDomain: 96,
@@ -14,35 +23,46 @@ const CONFIG = {
   dataFetchDelay: 20,
 };
 
-const initializeChart = () => {
-  const chart = lightningChart().ChartXY({
-    container: document.getElementById("chart"),
+const initializeCharts = () => {
+  const chartIds = ["chart1", "chart2"];
+  const charts = {};
+
+  chartIds.forEach((id) => {
+    const chart = lightningChart().ChartXY({
+      container: document.getElementById(id),
+    });
+
+    chart.setTitle(``);
+    chart
+      .getDefaultAxisX()
+      .setScrollStrategy(AxisScrollStrategies.expansion)
+      .setInterval({ start: 0, end: CONFIG.sampleRate * 5 })
+      .setVisible(true);
+
+    chart
+      .getDefaultAxisY()
+      .setScrollStrategy(AxisScrollStrategies.expansion)
+      .setVisible(true);
+
+    charts[id] = chart;
   });
 
-  chart.setTitle(``);
-  chart
-    .getDefaultAxisX()
-    .setScrollStrategy(AxisScrollStrategies.expansion)
-    .setInterval({ start: 0, end: CONFIG.timeDomain })
-    .setVisible(true);
-
-  chart
-    .getDefaultAxisY()
-    .setScrollStrategy(AxisScrollStrategies.expansion)
-    .setVisible(true);
-
-  return chart;
+  return charts;
 };
 
-const chart = initializeChart();
-const lineSeries = chart.addLineSeries();
+const charts = initializeCharts();
+const lineSeriesArray = Object.values(charts).map((chart) =>
+  chart.addLineSeries()
+);
 
 const updateChartData = () => {
   const displayedBuffer = buffer
     .slice(0, sliderValueGlobal)
     .map((value, index) => ({ x: index, y: value }));
-  lineSeries.clear();
-  lineSeries.add(displayedBuffer);
+  lineSeriesArray.forEach((series) => {
+    series.clear();
+    series.add(displayedBuffer);
+  });
 };
 
 slider.addEventListener("input", (event) => {
@@ -53,5 +73,35 @@ slider.addEventListener("input", (event) => {
   updateChartData();
 });
 
-// Initialize chart data with default slider value
+const playData = () => {
+  if (sliderValueGlobal < buffer.length) {
+    sliderValueGlobal++;
+    slider.value = sliderValueGlobal;
+    sliderValueDisplay.textContent = sliderValueGlobal;
+    updateChartData();
+  } else {
+    stopData();
+  }
+};
+
+const stopData = () => {
+  clearInterval(playInterval);
+  playStopButton.textContent = "Play";
+  isPlaying = false;
+};
+
+playStopButton.addEventListener("click", () => {
+  if (isPlaying) {
+    stopData();
+  } else {
+    if (sliderValueGlobal >= buffer.length) {
+      // Check if at the end
+      sliderValueGlobal = 1; // Reset to the beginning
+    }
+    isPlaying = true;
+    playStopButton.textContent = "Stop";
+    playInterval = setInterval(playData, 20);
+  }
+});
+// Initialize chart1 data with default slider value
 updateChartData();
