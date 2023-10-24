@@ -1,5 +1,11 @@
 import "./style.css";
-import { lightningChart, AxisScrollStrategies } from "@arction/lcjs";
+import {
+  lightningChart,
+  AxisScrollStrategies,
+  AutoCursorModes,
+  emptyLine,
+  AxisTickStrategies,
+} from "@arction/lcjs";
 
 let isPlaying = false;
 let playInterval;
@@ -16,7 +22,7 @@ const sliderValueDisplay = document.getElementById("sliderValue");
 sliderValueDisplay.textContent = sliderValueGlobal;
 
 const CONFIG = {
-  timeDomain: 96,
+  timeDomain: 549_825,
   channels: 1,
   sampleRate: 44_000,
   maxSeriesCount: 20,
@@ -24,27 +30,65 @@ const CONFIG = {
 };
 
 const initializeCharts = () => {
-  const chartIds = ["chart1", "chart2"];
+  const chartIds = ["chart1", "chart2", "chart3", "chart4", "chart5"];
   const charts = {};
 
-  chartIds.forEach((id) => {
+  chartIds.forEach((id, i) => {
     const chart = lightningChart().ChartXY({
       container: document.getElementById(id),
     });
 
-    chart.setTitle(``);
+    chart.setTitle(``).setPadding(3);
     chart
       .getDefaultAxisX()
-      .setScrollStrategy(AxisScrollStrategies.expansion)
-      .setInterval({ start: 0, end: CONFIG.sampleRate * 5 })
+      .setScrollStrategy(AutoCursorModes.disabled)
       .setVisible(true);
 
     chart
       .getDefaultAxisY()
       .setScrollStrategy(AxisScrollStrategies.expansion)
       .setVisible(true);
+    chart.forEachAxis((axis) =>
+      axis.setTickStrategy(AxisTickStrategies.Empty).setStrokeStyle(emptyLine)
+    );
 
-    charts[id] = chart;
+    const axisX = chart
+      .getDefaultAxisX()
+      .setScrollStrategy(undefined)
+      .setInterval({ start: 0, end: CONFIG.timeDomain })
+      .setVisible(false);
+    const axisY = chart
+      .getDefaultAxisY()
+      .setScrollStrategy(AxisScrollStrategies.expansion)
+      .setVisible(false);
+
+    // Series for displaying "old" data.
+    const seriesRight = chart.addLineSeries({
+      dataPattern: { pattern: "ProgressiveX" },
+      automaticColorIndex: 0,
+    });
+
+    // Rectangle for hiding "old" data under incoming "new" data.
+    const seriesOverlayRight = chart.addRectangleSeries();
+    const figureOverlayRight = seriesOverlayRight
+      .add({ x1: 0, y1: 0, x2: 0, y2: 0 })
+      .setStrokeStyle(emptyLine);
+
+    // Series for displaying new data.
+    const seriesLeft = chart.addLineSeries({
+      dataPattern: { pattern: "ProgressiveX" },
+      automaticColorIndex: 0,
+    });
+    seriesLeft.setStrokeStyle((stroke) => stroke.setThickness(-1));
+    seriesRight.setStrokeStyle((stroke) => stroke.setThickness(-1));
+
+    charts[id] = {
+      chart,
+      seriesRight,
+      seriesOverlayRight,
+      figureOverlayRight,
+      seriesLeft,
+    };
   });
 
   return charts;
@@ -52,7 +96,7 @@ const initializeCharts = () => {
 
 const charts = initializeCharts();
 const lineSeriesArray = Object.values(charts).map((chart) =>
-  chart.addLineSeries()
+  chart.chart.addLineSeries()
 );
 
 const updateChartData = () => {
@@ -75,7 +119,7 @@ slider.addEventListener("input", (event) => {
 
 const playData = () => {
   if (sliderValueGlobal < buffer.length) {
-    sliderValueGlobal++;
+    sliderValueGlobal += 2_000;
     slider.value = sliderValueGlobal;
     sliderValueDisplay.textContent = sliderValueGlobal;
     updateChartData();
