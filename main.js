@@ -17,12 +17,20 @@ const message = await response.json();
 console.log(message);
 
 const buffer = message[0].samples;
+// split the buffer into chunks of size 2200
+const chunkSize = 2200;
+const chunkedBuffer = [];
+for (let i = 0; i < buffer.length; i += chunkSize) {
+  chunkedBuffer.push(buffer.slice(i, i + chunkSize));
+}
+
+
 const slider = document.getElementById("slider");
 const sliderValueDisplay = document.getElementById("sliderValue");
 sliderValueDisplay.textContent = sliderValueGlobal;
 
 const CONFIG = {
-  timeDomain: 549_825,
+  timeDomain: 5_000,
   channels: 1,
   sampleRate: 44_000,
   maxSeriesCount: 20,
@@ -36,12 +44,14 @@ const initializeCharts = () => {
   chartIds.forEach((id, i) => {
     const chart = lightningChart().ChartXY({
       container: document.getElementById(id),
+      interactable: false,
     });
 
     chart.setTitle(``).setPadding(3);
     chart
       .getDefaultAxisX()
-      .setScrollStrategy(AutoCursorModes.disabled)
+      .setScrollStrategy(undefined)
+      //.setAutoCursorMode(AutoCursorModes.disabled)
       .setVisible(true);
 
     chart
@@ -81,13 +91,17 @@ const initializeCharts = () => {
     });
     seriesLeft.setStrokeStyle((stroke) => stroke.setThickness(-1));
     seriesRight.setStrokeStyle((stroke) => stroke.setThickness(-1));
-
+    let newDataCache = [];
     charts[id] = {
       chart,
+      axisX,
+      axisY,
       seriesRight,
       seriesOverlayRight,
       figureOverlayRight,
       seriesLeft,
+      prevPosX: 0,
+      newDataCache,
     };
   });
 
