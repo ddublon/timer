@@ -41,6 +41,7 @@ const processData = (samples) => {
     const element = buffer[i];
     element.x = i / CONFIG.sampleRate;
   }
+  console.log(buffer);
 
   const chunkSize = 2_200;
   const chunkedBuffer = [];
@@ -113,6 +114,13 @@ playStopButton.addEventListener("click", () => {
     if (sliderValueGlobal >= chunkedBuffer.length - 1) {
       // Check if at the end
       sliderValueGlobal = 1; // Reset to the beginning
+      // clear the chart at the beginning
+      Charts.forEach((chart) => {
+        // clear the charts
+        chart.seriesLeft.clear();
+        chart.seriesRight.clear();
+        chart.seriesOverlayRight.clear();
+      });
     }
     isPlaying = true;
     playStopButton.textContent = "Stop";

@@ -3,6 +3,7 @@ import {
   AxisScrollStrategies,
   ColorHEX,
   SolidFill,
+  SolidLine,
   Themes,
   disableThemeEffects,
   emptyLine,
@@ -26,7 +27,7 @@ export const initializeCharts = (
     const chart = lightningChart()
       .ChartXY({
         container: document.getElementById(id),
-        interactable: false,
+        interactable: true,
       })
       .setSeriesBackgroundStrokeStyle(emptyLine)
       .setSeriesBackgroundFillStyle(ecgBackgroundFill);
@@ -51,13 +52,43 @@ export const initializeCharts = (
       .setInterval({ start: 0, end: CONFIG.timeDomain })
       .setVisible(false)
       .setTickStrategy(AxisTickStrategies.Empty)
-      .setStrokeStyle(emptyLine);
+      .setStrokeStyle(emptyLine)
+      .setAnimationScroll(undefined)
+      .setAnimationZoom(undefined);
     const axisY = chart
       .getDefaultAxisY()
       .setScrollStrategy(AxisScrollStrategies.expansion)
       .setVisible(false)
       .setTickStrategy(AxisTickStrategies.Empty)
-      .setStrokeStyle(emptyLine);
+      .setStrokeStyle(emptyLine)
+      .setAnimationScroll(undefined)
+      .setAnimationZoom(undefined);
+    const infoLine = axisY.addConstantLine();
+    infoLine.setValue(150);
+    infoLine.setStrokeStyle(
+      new SolidLine({
+        thickness: -1,
+        fillStyle: new SolidFill({
+          color: ColorHEX("#0000FF"),
+        }),
+      })
+    );
+    infoLine.onMouseDragStop((clbk, PointEvent) => {
+      console.log("clbk", clbk);
+      console.log("PointEvent", PointEvent);
+      console.log("infoLine", infoLine);
+    });
+
+    const levelLine = axisY.addConstantLine();
+    levelLine.setValue(-140);
+    infoLine.setStrokeStyle(
+      new SolidLine({
+        thickness: -1,
+        fillStyle: new SolidFill({
+          color: ColorHEX("#EB7BE8"),
+        }),
+      })
+    );
 
     // Series for displaying "old" data.
     const seriesRight = chart.addLineSeries({
