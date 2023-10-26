@@ -1,14 +1,8 @@
-export const handleIncomingData = (
-  newDataForAllChannels,
-  channels,
-  CONFIG,
-  index
-) => {
-  console.log(index);
+export const handleIncomingData = (newDataForAllChannels, channels, CONFIG) => {
   channels.forEach((channel) => {
     // Keep track of the latest X (time position), clamped to the sweeping axis range.
     const newDataPointsTimestamped = newDataForAllChannels;
-    if (newDataPointsTimestamped.length === 0) {
+    if (!newDataPointsTimestamped) {
       return;
     }
     const prevPosX = channel.prevPosX;

@@ -49,15 +49,15 @@ export const initializeCharts = (
       .getDefaultAxisX()
       .setScrollStrategy(undefined)
       .setInterval({ start: 0, end: CONFIG.timeDomain })
-      // .setVisible(false)
-      // .setTickStrategy(AxisTickStrategies.Empty)
-      // .setStrokeStyle(emptyLine);
+      .setVisible(false)
+      .setTickStrategy(AxisTickStrategies.Empty)
+      .setStrokeStyle(emptyLine);
     const axisY = chart
       .getDefaultAxisY()
       .setScrollStrategy(AxisScrollStrategies.expansion)
-      // .setVisible(false)
-      // .setTickStrategy(AxisTickStrategies.Empty)
-      // .setStrokeStyle(emptyLine);
+      .setVisible(false)
+      .setTickStrategy(AxisTickStrategies.Empty)
+      .setStrokeStyle(emptyLine);
 
     // Series for displaying "old" data.
     const seriesRight = chart.addLineSeries({
@@ -69,7 +69,8 @@ export const initializeCharts = (
     const seriesOverlayRight = chart.addRectangleSeries();
     const figureOverlayRight = seriesOverlayRight
       .add({ x1: 0, y1: 0, x2: 0, y2: 0 })
-      .setStrokeStyle(emptyLine);
+      .setStrokeStyle(emptyLine)
+      .setFillStyle(ecgBackgroundFill);
 
     // Series for displaying new data.
     const seriesLeft = chart.addLineSeries({

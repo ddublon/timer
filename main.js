@@ -6,6 +6,7 @@ import {
   AxisScrollStrategies,
   emptyLine,
   AxisTickStrategies,
+  emptyTick,
 } from "@arction/lcjs";
 
 // --- Global Variables ---
@@ -17,6 +18,7 @@ const CONFIG = {
   channels: 1,
   sampleRate: 44_000,
 };
+let backwardsIndex = 0;
 
 const slider = document.getElementById("slider");
 const sliderValueDisplay = document.getElementById("sliderValue");
@@ -49,14 +51,41 @@ const processData = (samples) => {
 };
 
 // --- Update Chart Data ---
-const updateChartData = (charts) => {
-  handleIncomingData(
-    chunkedBuffer[sliderValueGlobal],
-    charts,
-    CONFIG,
-    sliderValueGlobal
-  );
+const updateChartData = (charts, backwards = false) => {
+  if (!backwards) {
+    handleIncomingData(chunkedBuffer[sliderValueGlobal], charts, CONFIG);
+    return;
+  }
+  // need to run handleIncomingData from backwardsIndex to sliderValueGlobal
+  const backwardsData = [];
+  for (let i = backwardsIndex; i < sliderValueGlobal; i++) {
+    backwardsData.push(chunkedBuffer[i]);
+  }
+
+  for (let i = 0; i < backwardsData.length; i++) {
+    handleIncomingData(backwardsData[i], charts, CONFIG);
+  }
+
+  return;
 };
+
+slider.addEventListener("input", (event) => {
+  const value = event.target.value;
+  if (value > sliderValueGlobal) {
+    sliderValueDisplay.textContent = value;
+    sliderValueGlobal = parseInt(value, 10);
+    updateChartData(Charts);
+  } else {
+    // slider draged backwards
+    sliderValueDisplay.textContent = value;
+    sliderValueGlobal = parseInt(value, 10);
+    const backwards = true;
+    // calcukate the hundreds of sliderValueGlobal
+    const hundreds = Math.floor(sliderValueGlobal / 100);
+    backwardsIndex = hundreds * 100;
+    updateChartData(Charts, backwards);
+  }
+});
 
 const playData = () => {
   if (sliderValueGlobal < chunkedBuffer.length - 1) {
@@ -76,12 +105,6 @@ const stopData = () => {
 };
 
 // --- Event Listeners ---
-slider.addEventListener("input", (event) => {
-  const value = event.target.value;
-  sliderValueDisplay.textContent = value;
-  sliderValueGlobal = parseInt(value, 10);
-  updateChartData(Charts);
-});
 
 playStopButton.addEventListener("click", () => {
   if (isPlaying) {
